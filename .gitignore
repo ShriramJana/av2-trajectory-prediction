@@ -1,0 +1,21 @@
+﻿# Data & outputs
+data/
+*.npz
+results/**/*.ckpt
+*.pt
+*.pth
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# AI tooling
+.claude/
+CLAUDE.md
+
+# OS / editor
+.vscode/
+Thumbs.db
+desktop.ini
