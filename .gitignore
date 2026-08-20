@@ -19,3 +19,6 @@ CLAUDE.md
 .vscode/
 Thumbs.db
 desktop.ini
+
+# Build metadata
+*.egg-info/

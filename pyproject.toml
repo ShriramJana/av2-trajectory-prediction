@@ -1,0 +1,23 @@
+[project]
+name = "trajpred"
+version = "0.1.0"
+description = "Multimodal trajectory prediction on Argoverse 2"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy",
+    "pyarrow",
+    "pyyaml",
+    "matplotlib",
+    "tqdm",
+    "pandas",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "jupyter"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
