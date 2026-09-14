@@ -1,10 +1,9 @@
-from pathlib import Path
-
 import numpy as np
 
+from trajpred.env import raw_dir
 from trajpred.scenario import load_scenario
 
-RAW_VAL = Path(r"C:\data\av2\raw\val")
+RAW_VAL = raw_dir("val")
 
 
 def test_load_scenario_shapes():

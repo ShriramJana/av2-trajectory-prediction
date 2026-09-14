@@ -16,8 +16,11 @@ from botocore import UNSIGNED
 from botocore.config import Config
 from tqdm import tqdm
 
+from trajpred.env import data_root
+
 BUCKET = "argoverse"
 PREFIX = "datasets/av2/motion-forecasting"
+MANIFEST_DIR = Path(__file__).resolve().parent.parent / "manifests"
 
 
 def make_client():
@@ -57,13 +60,14 @@ def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--split", required=True, choices=["train", "val"])
     p.add_argument("--n", type=int, required=True)
-    p.add_argument("--out", default=r"C:\data\av2\raw")
+    p.add_argument("--out", default=str(data_root() / "raw"))
     p.add_argument("--workers", type=int, default=32)
     args = p.parse_args()
 
     s3 = make_client()
     out_root = Path(args.out) / args.split
-    manifest = Path(args.out) / f"{args.split}_ids.txt"
+    # manifests live in the repo so every machine downloads the identical subset
+    manifest = MANIFEST_DIR / f"{args.split}_ids.txt"
 
     if manifest.exists():
         chosen = manifest.read_text().split()
