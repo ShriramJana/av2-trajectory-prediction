@@ -1,0 +1,11 @@
+name: s3
+stage: s3
+lr: 5.0e-4
+weight_decay: 1.0e-4
+batch_size: 32
+epochs: 40
+model:
+  d_model: 128
+  n_layers: 4
+  n_heads: 8
+  k: 6

@@ -3,6 +3,7 @@ import torch
 from trajpred.models.constant_velocity import constant_velocity
 from trajpred.models.gru import GRUPredictor
 from trajpred.models.multimodal import MultiModalGRU
+from trajpred.models.polyline import PolylineNet
 
 
 def random_batch(b: int = 4, n: int = 6, l: int = 9, seed: int = 0) -> dict[str, torch.Tensor]:
@@ -49,3 +50,62 @@ def test_gru_predictor_shapes_and_grads():
 
 def test_multimodal_gru_shapes_and_grads():
     assert_trains(MultiModalGRU(hidden=32, k=6), random_batch(), k=6)
+
+
+def small_polyline_net(**flags) -> PolylineNet:
+    torch.manual_seed(0)
+    return PolylineNet(d_model=32, n_layers=2, n_heads=4, **flags).eval()
+
+
+def test_polyline_net_shapes_and_grads():
+    for flags in ({}, {"use_map": False}, {"use_social": False}):
+        assert_trains(small_polyline_net(**flags).train(), random_batch(), k=6)
+
+
+def test_polyline_net_ignores_padding():
+    """Appending padded (mask=False) agents and lanes must not change the output,
+    even when the padded rows are filled with garbage."""
+    model, batch = small_polyline_net(), random_batch()
+    b = len(batch["future"])
+    padded = dict(batch)
+    padded["agent_hist"] = torch.cat([batch["agent_hist"], torch.full((b, 3, 50, 2), 1e3)], dim=1)
+    padded["agent_mask"] = torch.cat([batch["agent_mask"], torch.zeros(b, 3, 50, dtype=torch.bool)], dim=1)
+    padded["lanes"] = torch.cat([batch["lanes"], torch.full((b, 3, 20, 2), -1e3)], dim=1)
+    padded["lane_mask"] = torch.cat([batch["lane_mask"], torch.zeros(b, 3, dtype=torch.bool)], dim=1)
+    padded["lane_is_intersection"] = torch.cat(
+        [batch["lane_is_intersection"], torch.ones(b, 3, dtype=torch.bool)], dim=1
+    )
+    with torch.no_grad():
+        traj, logits = model(batch)
+        traj_p, logits_p = model(padded)
+    assert torch.allclose(traj, traj_p, atol=1e-5) and torch.allclose(logits, logits_p, atol=1e-5)
+
+
+def test_polyline_net_ignores_unobserved_steps():
+    """Values stored at masked-out timesteps of a real agent must not matter."""
+    model, batch = small_polyline_net(), random_batch()
+    garbage = dict(batch)
+    garbage["agent_hist"] = torch.where(
+        batch["agent_mask"][..., None], batch["agent_hist"], torch.tensor(777.0)
+    )
+    with torch.no_grad():
+        assert torch.allclose(model(batch)[0], model(garbage)[0], atol=1e-5)
+
+
+def test_polyline_net_ablation_flags():
+    batch = random_batch()
+    other = random_batch(seed=1)
+    changed_lanes = {**batch, "lanes": other["lanes"]}
+    changed_agents = {**batch, "agent_hist": batch["agent_hist"].clone()}
+    changed_agents["agent_hist"][:, 1:] = other["agent_hist"][:, 1:]  # focal untouched
+
+    with torch.no_grad():
+        full = small_polyline_net()
+        assert not torch.allclose(full(batch)[0], full(changed_lanes)[0], atol=1e-5)
+        assert not torch.allclose(full(batch)[0], full(changed_agents)[0], atol=1e-5)
+
+        no_map = small_polyline_net(use_map=False)
+        assert torch.allclose(no_map(batch)[0], no_map(changed_lanes)[0], atol=1e-5)
+
+        no_social = small_polyline_net(use_social=False)
+        assert torch.allclose(no_social(batch)[0], no_social(changed_agents)[0], atol=1e-5)

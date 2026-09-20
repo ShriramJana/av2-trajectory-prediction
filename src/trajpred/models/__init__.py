@@ -13,4 +13,8 @@ def build_model(stage: str, model_cfg: dict) -> nn.Module:
         from trajpred.models.multimodal import MultiModalGRU
 
         return MultiModalGRU(**model_cfg)
+    if stage == "s3":
+        from trajpred.models.polyline import PolylineNet
+
+        return PolylineNet(**model_cfg)
     raise ValueError(f"unknown trainable stage: {stage!r}")
