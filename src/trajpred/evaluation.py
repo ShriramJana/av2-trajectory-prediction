@@ -1,5 +1,6 @@
 """Run any stage over a dataset and collect per-scenario metrics."""
 
+from pathlib import Path
 from typing import Callable
 
 import numpy as np
@@ -9,6 +10,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from trajpred.dataset import collate
 from trajpred.metrics import evaluate_batch
+from trajpred.models import build_model
 
 # batch -> (traj (B, K, 60, 2), probs (B, K))
 PredictFn = Callable[[dict[str, Tensor]], tuple[Tensor, Tensor]]
@@ -26,6 +28,14 @@ def model_predict_fn(model: torch.nn.Module) -> PredictFn:
         return traj, logits.softmax(dim=-1)
 
     return predict
+
+
+def load_predictor(cfg: dict, device: torch.device, ckpt: Path | None = None) -> PredictFn:
+    """Build a config's model, load its best checkpoint, return it as a PredictFn."""
+    model = build_model(cfg["stage"], cfg["model"]).to(device)
+    ckpt = ckpt or Path(cfg["ckpt_dir"]) / "best.pt"
+    model.load_state_dict(torch.load(ckpt, map_location=device, weights_only=True)["model"])
+    return model_predict_fn(model.eval())
 
 
 @torch.no_grad()
