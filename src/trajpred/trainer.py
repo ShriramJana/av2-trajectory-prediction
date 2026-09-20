@@ -51,7 +51,7 @@ class Trainer:
             self.opt, max_lr=cfg["lr"], total_steps=steps, pct_start=0.1
         )
 
-    def overfit_one_batch(self, steps: int = 300, n: int = 16) -> tuple[float, float]:
+    def overfit_one_batch(self, steps: int = 1000, n: int = 16) -> tuple[float, float]:
         """Memorize n scenes with a throwaway copy of the model.
 
         Returns (initial loss, final loss). If a model + loss can't drive this

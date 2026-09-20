@@ -32,7 +32,7 @@ def main() -> None:
     if not args.skip_overfit_check:
         first, last = trainer.overfit_one_batch()
         print(f"overfit-one-batch: loss {first:.4f} -> {last:.4f}")
-        assert last < 0.1 * first, "model failed to memorize one small batch — fix before training"
+        assert last < 0.05 * first, "model failed to memorize one small batch — fix before training"
 
     best = trainer.fit()
     print(f"best checkpoint: {best}")

@@ -9,4 +9,8 @@ def build_model(stage: str, model_cfg: dict) -> nn.Module:
         from trajpred.models.gru import GRUPredictor
 
         return GRUPredictor(**model_cfg)
+    if stage == "s2":
+        from trajpred.models.multimodal import MultiModalGRU
+
+        return MultiModalGRU(**model_cfg)
     raise ValueError(f"unknown trainable stage: {stage!r}")

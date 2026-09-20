@@ -2,6 +2,7 @@ import torch
 
 from trajpred.models.constant_velocity import constant_velocity
 from trajpred.models.gru import GRUPredictor
+from trajpred.models.multimodal import MultiModalGRU
 
 
 def random_batch(b: int = 4, n: int = 6, l: int = 9, seed: int = 0) -> dict[str, torch.Tensor]:
@@ -44,3 +45,7 @@ def test_cv_extrapolates_last_velocity():
 
 def test_gru_predictor_shapes_and_grads():
     assert_trains(GRUPredictor(hidden=32), random_batch(), k=1)
+
+
+def test_multimodal_gru_shapes_and_grads():
+    assert_trains(MultiModalGRU(hidden=32, k=6), random_batch(), k=6)
