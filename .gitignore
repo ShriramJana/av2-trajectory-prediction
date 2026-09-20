@@ -1,9 +1,11 @@
-﻿# Data & outputs
+# Data & outputs
 data/
 *.npz
 results/**/*.ckpt
 *.pt
 *.pth
+checkpoints/
+results/per_scenario/
 
 # Python
 .venv/

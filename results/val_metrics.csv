@@ -1,0 +1,2 @@
+stage,K,minADE,minFDE,MR,brier_minFDE,n_scenarios,date
+s0,1,4.4054,11.6921,0.8544,11.6921,5000,2026-09-20
