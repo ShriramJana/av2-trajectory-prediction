@@ -89,7 +89,7 @@ trajpred/
   results/         metrics tables, figures
 ```
 
-Git from day one; commit per milestone so the history shows the progression. Commit messages contain no AI attribution; no AI-tooling files are committed.
+Git from day one; commit per milestone so the history shows the progression.
 
 ## 8. Workflow
 

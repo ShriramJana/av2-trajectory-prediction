@@ -1,7 +1,5 @@
 # Argoverse 2 Trajectory Prediction Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** A staged ladder of trajectory-prediction models (constant velocity → GRU → K-mode → polyline transformer) on an Argoverse 2 subset, evaluated on official metrics, with ablations and error analysis.
 
 **Architecture:** Offline preprocessing converts each AV2 scenario (parquet + map JSON) into an agent-centric `.npz` bundle. A single Dataset/collate feeds all models. Every stage is evaluated by the same script on the same frozen val subset, appending one row to a shared results table.
@@ -18,7 +16,7 @@
 - Task protocol: 50 observed steps (5 s), 60 predicted steps (6 s), 10 Hz, focal agent only. K = 6 modes.
 - Agent-centric frame: focal agent's position at the last observed step (index 49) is the origin; its heading at that step points +x.
 - Metrics: minADE_K, minFDE_K, MR@2m, brier-minFDE (all meters, focal agent only).
-- Commit messages: plain conventional style, **no AI attribution of any kind**. No AI-tooling files committed (`.claude/`, `CLAUDE.md` are gitignored).
+- Commit messages: plain conventional style, one commit per task.
 - Teaching workflow: each task begins with a concept explainer and ends with a check-your-understanding exercise before the commit.
 
 ---
@@ -754,6 +752,6 @@ def plot_scene(bundle: dict, traj=None, probs=None, ax=None) -> Axes
 
 ## Self-review notes
 
-- **Spec coverage:** env (T1), subset download (T2), preprocessing + frame (T3–6), dataset (T7), metrics + devkit cross-check (T5), S0–S3 (T8–12), overfit-check (T9), viz (T13), ablations/breakdowns/README (T14), optional full run (T15). Frozen val, seed 42, OneDrive-safe data path, no-AI-attribution rule all in Global Constraints.
+- **Spec coverage:** env (T1), subset download (T2), preprocessing + frame (T3–6), dataset (T7), metrics + devkit cross-check (T5), S0–S3 (T8–12), overfit-check (T9), viz (T13), ablations/breakdowns/README (T14), optional full run (T15). Frozen val, seed 42, OneDrive-safe data path all in Global Constraints.
 - **Type consistency:** all models return `(traj (B,K,60,2), logits/probs (B,K))`; CV returns probs directly (uniform ones), trained stages return logits and `evaluate.py` softmaxes before `evaluate_batch`. `KModeHead` defined in T11, reused in T12.
 - **Known adaptation point:** exact AV2 parquet column names are verified in Task 3 against real data; only `RawScenario` leaks past that boundary.
