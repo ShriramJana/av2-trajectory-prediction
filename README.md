@@ -12,6 +12,34 @@ what each idea is worth.
 at its median error for turns. Black = 5 s of observed history, red = six
 predicted futures with probabilities, green = what actually happened.*
 
+## Key findings
+
+Endpoint error (minFDE, best of 6 predictions) on 5,000 frozen validation
+scenarios: **11.7 m → 8.5 m → 3.5 m → 2.4 m → 1.9 m** across the ladder.
+
+1. **Predicting six futures instead of one was the biggest single gain**
+   (8.5 → 3.5 m) — bigger than any architecture change, for 40 seconds of
+   training. A single prediction learns the *average* of "turn" and "go
+   straight", which is a path nobody drives.
+2. **The map matters most exactly where you'd expect.** It is worth 0.65 m
+   overall and 2.1 m on turns. Without it, turning error is no better than a
+   model that has never seen a road.
+3. **Other agents matter only in dense traffic.** No effect in scenes with ≤10
+   agents, +0.13 m in scenes with 31+, consistent across two seeds — about a
+   tenth of the map's value.
+4. **More data beat more architecture.** The unchanged model on 13× more data:
+   2.4 → 1.9 m, and still not saturated.
+5. **The model needs lane topology, not lane precision — but it has no
+   fallback.** Shifting every lane by 1 m costs 0.05 m. Removing all lanes gives
+   7.6 m, far worse than a model trained without a map (3.2 m).
+6. **Predictions stay on the road** as often as real cars do (4.7% of endpoints
+   off-lane vs 4.4% for ground truth; 21% without a map), at 2.4 ms per scene.
+
+A 0.92 M-parameter model, trained in 1.5 hours on one RTX 4060. These are
+validation results from a small, controlled study — not leaderboard entries.
+Every number above is reproducible from this repo, and the trained weights are
+in the [v1.0 release](https://github.com/ShriramJana/av2-trajectory-prediction/releases/tag/v1.0).
+
 ![S2 vs S3 on turning scenarios](results/figures/s2_vs_s3.png)
 
 *What the map buys. Top: six predicted futures (red, labelled with probability) from a model that
@@ -89,6 +117,8 @@ training set (13× more scenarios, ~1.5 h on one RTX 4060) takes minFDE from 2.4
 to 1.88 m and miss rate from 0.41 to 0.31. The gain is largest on turns
 (5.13 → 3.33 m), which the 15k subset had only ~2,400 examples of. Train and val
 loss are still equal at the end, so the model is not yet saturated.
+
+![Learning curves](results/figures/training_curves.png)
 
 **The ablations hold at full scale, with one refinement.** Repeated on all 200k
 scenarios: the map is worth 0.64–0.69 m (2.1 m on turns). Other agents are worth
@@ -212,3 +242,20 @@ CUDA → Apple MPS → CPU. Design and plan are in [docs/](docs/).
 Windows note: if Smart App Control blocks a freshly released `pyarrow` DLL
 ("An Application Control policy has blocked this file"), install the previous
 release (`python -m pip install "pyarrow<25"`).
+
+## Data and acknowledgements
+
+This project uses the [Argoverse 2 Motion Forecasting dataset](https://www.argoverse.org/av2.html),
+released by Argo AI under
+[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). The dataset
+is not redistributed here (only scenario IDs, in `manifests/`). The released
+model weights were trained on it and are shared for research and educational
+use under the same non-commercial terms.
+
+> B. Wilson, W. Qi, T. Agarwal, J. Lambert, J. Singh, et al. *Argoverse 2: Next
+> Generation Datasets for Self-Driving Perception and Forecasting.* NeurIPS
+> Datasets and Benchmarks, 2021.
+
+The S3 encoder follows the polyline idea of VectorNet (Gao et al., CVPR 2020).
+Metrics are checked against the official
+[av2 devkit](https://github.com/argoverse/av2-api).
