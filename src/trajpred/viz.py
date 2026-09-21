@@ -11,9 +11,13 @@ def plot_scene(
     probs: np.ndarray | None = None,
     ax: Axes | None = None,
     radius: float = 60.0,
+    hist_upto: int = 50,
+    fut_upto: int = 60,
 ) -> Axes:
     """Draw one scenario. `bundle` is an npz bundle (unpadded arrays);
     `traj` (K, 60, 2) and `probs` (K,) are optional model outputs.
+    `hist_upto` / `fut_upto` draw only the first steps of the history / future
+    (for animation frames); the view stays fixed regardless.
 
     Lanes grey, other agents light blue, focal history black, GT future green,
     predicted modes red with opacity growing with probability.
@@ -24,12 +28,13 @@ def plot_scene(
     for lane in bundle["lanes"][bundle["lane_mask"]]:
         ax.plot(lane[:, 0], lane[:, 1], color="0.78", lw=1, zorder=1)
 
-    for hist, mask in zip(bundle["agent_hist"][1:], bundle["agent_mask"][1:]):
+    for hist, mask in zip(bundle["agent_hist"][1:, :hist_upto], bundle["agent_mask"][1:, :hist_upto]):
         if mask.any():
             ax.plot(hist[mask, 0], hist[mask, 1], color="#8ec1e8", lw=1.2, zorder=2)
             ax.plot(*hist[mask][-1], "o", color="#8ec1e8", ms=3, zorder=2)
 
-    if traj is not None:
+    if traj is not None and fut_upto > 0:
+        traj = traj[:, :fut_upto]
         probs = np.full(len(traj), 1.0 / len(traj)) if probs is None else probs
         for mode, p in sorted(zip(traj, probs), key=lambda tp: tp[1]):
             alpha = 0.25 + 0.75 * p / probs.max()
@@ -39,11 +44,13 @@ def plot_scene(
                 ax.annotate(f"{p:.2f}", mode[-1], fontsize=7, color="#7f1d1d",
                             xytext=(3, 3), textcoords="offset points", zorder=6)
 
-    focal = bundle["agent_hist"][0]
+    focal = bundle["agent_hist"][0, :hist_upto]
     ax.plot(focal[:, 0], focal[:, 1], color="black", lw=2.2, zorder=5, label="history")
-    ax.plot(bundle["future"][:, 0], bundle["future"][:, 1], color="#2ca02c", lw=2.2,
-            zorder=3, label="ground truth")
-    ax.plot(*bundle["future"][-1], "*", color="#2ca02c", ms=11, zorder=5)
+    ax.plot(*focal[-1], "o", color="black", ms=5, zorder=5)
+    if fut_upto > 0:
+        future = bundle["future"][:fut_upto]
+        ax.plot(future[:, 0], future[:, 1], color="#2ca02c", lw=2.2, zorder=3, label="ground truth")
+        ax.plot(*future[-1], "*", color="#2ca02c", ms=11, zorder=5)
 
     # center the view between the origin and the GT endpoint so both stay visible
     cx, cy = bundle["future"][-1] / 2
