@@ -63,11 +63,18 @@ def _wrap(angle: float) -> float:
     return (angle + np.pi) % (2 * np.pi) - np.pi
 
 
-def preprocess_scenario(scenario_dir: Path) -> dict[str, np.ndarray] | None:
-    """Returns the bundle, or None if the focal track is not fully observed."""
+def preprocess_scenario(
+    scenario_dir: Path, has_future: bool = True
+) -> dict[str, np.ndarray] | None:
+    """Returns the bundle, or None if the focal track is not fully observed.
+
+    Test-split scenarios stop at t=49: pass has_future=False and the bundle's
+    `future` is zeros with `future_mask` all False.
+    """
     raw = load_scenario(scenario_dir)
     focal = raw.focal_idx
-    if np.isnan(raw.positions[focal]).any() or np.isnan(raw.headings[focal]).any():
+    required = slice(None) if has_future else slice(0, OBS_LEN)
+    if np.isnan(raw.positions[focal, required]).any() or np.isnan(raw.headings[focal, required]).any():
         return None
 
     origin = raw.positions[focal, OBS_LEN - 1].copy()
@@ -103,9 +110,9 @@ def preprocess_scenario(scenario_dir: Path) -> dict[str, np.ndarray] | None:
         "lanes": lanes.astype(np.float32),
         "lane_mask": np.ones(len(lanes), dtype=bool),
         "lane_is_intersection": is_intersection,
-        "future": pos[focal, OBS_LEN:].astype(np.float32),
-        "future_mask": np.ones(FUT_LEN, dtype=bool),
-        "final_heading": np.float32(_wrap(raw.headings[focal, -1] - heading)),
+        "future": np.nan_to_num(pos[focal, OBS_LEN:]).astype(np.float32),
+        "future_mask": np.full(FUT_LEN, has_future),
+        "final_heading": np.float32(_wrap(raw.headings[focal, -1] - heading) if has_future else 0.0),
         "origin": origin,
         "heading": np.float64(heading),
     }

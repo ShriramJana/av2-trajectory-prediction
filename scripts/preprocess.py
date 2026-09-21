@@ -14,9 +14,9 @@ from trajpred.env import processed_dir, raw_dir
 from trajpred.preprocess import CONFIG, config_hash, preprocess_scenario
 
 
-def _work(args: tuple[Path, Path]) -> bool:
-    scenario_dir, out_dir = args
-    bundle = preprocess_scenario(scenario_dir)
+def _work(args: tuple[Path, Path, bool]) -> bool:
+    scenario_dir, out_dir, has_future = args
+    bundle = preprocess_scenario(scenario_dir, has_future)
     if bundle is None:
         return False
     # uncompressed: bundles are small and load time matters more than disk
@@ -26,7 +26,7 @@ def _work(args: tuple[Path, Path]) -> bool:
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--split", required=True, choices=["train", "val", "train_full", "val_full"])
+    p.add_argument("--split", required=True, choices=["train", "val", "train_full", "val_full", "test_full"])
     p.add_argument("--workers", type=int, default=min(8, os.cpu_count() or 1))
     args = p.parse_args()
 
@@ -34,7 +34,8 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     scenario_dirs = sorted(d for d in raw_dir(args.split).iterdir() if d.is_dir())
 
-    jobs = [(d, out_dir) for d in scenario_dirs]
+    # the test split ends at the last observed step: there is no future to store
+    jobs = [(d, out_dir, not args.split.startswith("test")) for d in scenario_dirs]
     with ProcessPoolExecutor(args.workers) as pool:
         ok = list(tqdm(pool.map(_work, jobs, chunksize=32), total=len(jobs)))
 

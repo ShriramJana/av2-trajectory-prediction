@@ -61,7 +61,7 @@ def download_scenario(s3, split: str, sid: str, out_root: Path) -> str:
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--split", required=True, choices=["train", "val"])
+    p.add_argument("--split", required=True, choices=["train", "val", "test"])
     p.add_argument("--n", type=int, help="subset size (required unless --all)")
     p.add_argument("--all", action="store_true", help="whole split -> raw/<split>_full")
     p.add_argument("--out", default=str(data_root() / "raw"))
