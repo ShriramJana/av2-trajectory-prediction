@@ -31,6 +31,38 @@ Full rows (frozen val): minADE 0.95, minFDE 1.88, MR 0.31, brier-minFDE 2.51.
   untouched, and all 5,000 subset bundles are byte-identical in `val_full`.
 - Checkpoint selection still uses the frozen 5k val, so `s3_full@val_full` is
   the cleaner number: 80% of those scenarios played no part in selection.
-- Not done: ablations on full data. The "social context adds nothing" finding
-  was measured at 15k scenes only — it may not hold at 200k, and that is the
-  obvious next experiment.
+
+## Ablations and a second seed at full scale (added 2026-09-21)
+
+| model (all 199,908 scenes) | minADE | minFDE | MR | brier-minFDE |
+|---|---|---|---|---|
+| s3_full (seed 42) | 0.95 | 1.88 | 0.31 | 2.51 |
+| s3_full (seed 43) | 0.92 | 1.83 | 0.29 | 2.46 |
+| s3_full − map | 1.15 | 2.52 | 0.43 | 3.13 |
+| s3_full − social | 0.96 | 1.94 | 0.32 | 2.57 |
+
+- **Seed spread is 0.05 m.** That is the ruler for every other difference here.
+  Two seeds is a thin estimate of variance, but it is no longer zero seeds.
+- **Map: 0.64–0.69 m** (0.79 at 15k). Turning scenes 3.3 → 5.4 m without it.
+  Still the dominant context signal; slightly less dominant, because with 13×
+  more data the model infers more road structure from motion alone.
+- **Social: 0.06–0.11 m overall** — barely above seed noise. But broken down by
+  scene density (minFDE, no-social vs the two full seeds):
+
+  | agents in scene | n | seed 42 | seed 43 | − social |
+  |---|---|---|---|---|
+  | 1–10 | 412 | 1.85 | 1.91 | 1.86 |
+  | 11–30 | 2864 | 1.89 | 1.81 | 1.92 |
+  | 31+ | 1724 | 1.85 | 1.84 | 1.98 |
+
+  No effect in sparse scenes, +0.13 m in dense ones, against both seeds. That is
+  the dose-response you would expect if the effect is real. At 15k scenes the
+  same table showed +0.10 m in dense scenes but with no seed to compare against.
+  Conclusion: social context helps in dense traffic, by roughly a tenth of a
+  meter of endpoint error — real, small, and an order of magnitude less than
+  the map. The 15k-scene result ("no measurable effect") was under-powered, not
+  wrong in direction.
+- Why so small? Untested hypotheses: the focal car's own history already encodes
+  its reaction to traffic; minFDE over 6 modes forgives yield-or-go ambiguity;
+  and single-agent open-loop metrics do not reward scene consistency, which is
+  where interaction modeling matters most.

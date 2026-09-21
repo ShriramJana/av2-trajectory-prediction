@@ -6,9 +6,15 @@ dataset. Built as a ladder: each stage adds one idea, and every stage is scored
 by the same script on the same frozen validation scenarios, so the table shows
 what each idea is worth.
 
+![Predictions unfolding on three turning scenarios](results/figures/s3_full_demo.gif)
+
+*The final model on three turning scenarios chosen by rule, not by eye: the ones
+at its median error for turns. Black = 5 s of observed history, red = six
+predicted futures with probabilities, green = what actually happened.*
+
 ![S2 vs S3 on turning scenarios](results/figures/s2_vs_s3.png)
 
-*Top: six predicted futures (red, labelled with probability) from a model that
+*What the map buys. Top: six predicted futures (red, labelled with probability) from a model that
 sees only the car's own history. Bottom: the same scenes after adding the lane
 graph. Black = observed history, green = what actually happened.*
 
@@ -25,6 +31,9 @@ graph. Black = observed history, green = what actually happened.*
 | | S3 without the map | 6 | 1.44 | 3.24 | 0.55 | 3.86 |
 | | S3 without other agents | 6 | 1.19 | 2.49 | 0.43 | 3.13 |
 | **S3-full** | **Same model, all 199,908 training scenarios** | 6 | **0.95** | **1.88** | **0.31** | **2.51** |
+| | S3-full, second seed | 6 | 0.92 | 1.83 | 0.29 | 2.46 |
+| | S3-full without the map | 6 | 1.15 | 2.52 | 0.43 | 3.13 |
+| | S3-full without other agents | 6 | 0.96 | 1.94 | 0.32 | 2.57 |
 
 minFDE = endpoint error of the best of K predictions; miss rate = share of
 scenarios where no prediction ends within 2 m; brier-minFDE also penalizes
@@ -40,7 +49,8 @@ is representative.
   val. Both subsets were drawn with seed 42 and are frozen in
   [manifests/](manifests/). These are validation numbers from a small model, not
   leaderboard entries.
-- One training run per row. Differences below ~0.1 m are not evidence.
+- One training run per row, except S3-full (two seeds: 1.88 and 1.83). Treat
+  differences below ~0.1 m as noise.
 - Checkpoints were picked on the same validation set they are reported on.
 
 ## What each stage taught
@@ -78,9 +88,32 @@ interactions) are discussed, not proven, in
 training set (13× more scenarios, ~1.5 h on one RTX 4060) takes minFDE from 2.45
 to 1.88 m and miss rate from 0.41 to 0.31. The gain is largest on turns
 (5.13 → 3.33 m), which the 15k subset had only ~2,400 examples of. Train and val
-loss are still equal at the end, so the model is not yet saturated. The
-ablations were *not* repeated at this scale — whether other agents still add
-nothing with 200k scenes is the obvious next experiment.
+loss are still equal at the end, so the model is not yet saturated.
+
+**The ablations hold at full scale, with one refinement.** Repeated on all 200k
+scenarios: the map is worth 0.64–0.69 m (2.1 m on turns). Other agents are worth
+0.06–0.11 m overall — about the size of the seed-to-seed spread (0.05 m) — but
+the effect is where it should be: nothing in scenes with ≤10 agents, +0.13 m in
+scenes with 31 or more, against both seeds. So social context does help in dense
+traffic; it is just small next to the map, and invisible at 15k scenes.
+
+**Beyond minFDE: imperfect maps and staying on the road.** Two evaluation-only
+experiments on S3-full ([notes](docs/notes/16-robustness-deployment.md)):
+
+![Map robustness](results/figures/map_robustness.png)
+
+- *Lane position noise barely matters; missing lanes matter a lot.* Shifting
+  every lane by σ = 1 m costs 0.05 m. Removing half the lanes costs 0.75 m, and
+  removing all of them gives 7.63 m — far worse than the model trained without a
+  map (3.24 m). The model uses the map for topology, not centimeters, but having
+  only ever seen perfect maps it has no fallback. Pairing it with perceived
+  (incomplete) lanes would need lane-dropout augmentation in training.
+- *Fast enough to be uninteresting.* 2.4 ms per scene at batch 1 on an RTX 4060
+  (0.5 ms at batch 64), model forward pass only.
+- *Predictions stay on the road.* 4.7% of S3-full's predicted endpoints are more
+  than 3 m from any lane centerline; for the ground truth itself it's 4.4%
+  (driveways, parking lots). For S2, which has no map, it's 21% — a failure that
+  minFDE never penalizes, since it only scores the best mode.
 
 **What still fails.** For the subset-trained S3, median endpoint error is 1.7 m,
 but the worst 10% of scenarios carry 38% of the total error: turns taken at speed
@@ -102,7 +135,7 @@ Galleries of the 12 worst scenarios per model are in
   (max difference 1.4e-14).
 - **Overfit-one-batch gate:** every training run must first memorize 16 scenes,
   or it refuses to start.
-- 31 tests; one learning note per stage in [docs/notes/](docs/notes/), including
+- 32 tests; one learning note per stage in [docs/notes/](docs/notes/), including
   the predictions that turned out wrong.
 
 ## Reproduce
@@ -141,9 +174,19 @@ python scripts/download_subset.py --split train --all
 python scripts/download_subset.py --split val --all
 python scripts/preprocess.py --split train_full
 python scripts/preprocess.py --split val_full
-python scripts/train.py --config configs/s3_full.yaml
+python scripts/train.py --config configs/s3_full.yaml       # also: s3_full_seed2, s3_full_no_map, s3_full_no_social
 python scripts/evaluate.py --config configs/s3_full.yaml
 python scripts/evaluate.py --config configs/s3_full.yaml --val-split val_full
+
+# 7. robustness, off-lane rate + latency, animation (any trained config works)
+python scripts/map_robustness.py --config configs/s3_full.yaml
+python scripts/deployment_metrics.py --config configs/s3_full.yaml
+python scripts/make_animation.py --config configs/s3_full.yaml
+
+# 8. optional: leaderboard submission file (test split has no public labels)
+python scripts/download_subset.py --split test --all
+python scripts/preprocess.py --split test_full
+python scripts/make_submission.py --config configs/s3_full.yaml
 ```
 
 Data location defaults to `C:\data\av2` (Windows) or `~/data/av2` (macOS/Linux);

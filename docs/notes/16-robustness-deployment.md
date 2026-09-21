@@ -58,5 +58,15 @@ kinematic-feasibility or drivable-area check.
 
 ## 3. Latency
 
-See `results/deployment_metrics.csv` (measured on an idle RTX 4060, median of
-100 batches after warm-up, model forward only — excludes preprocessing).
+Measured on an idle RTX 4060, median of 100 batches after warm-up, model forward
+only (excludes preprocessing and host-to-device copies):
+
+| model | batch 1 | batch 64 |
+|---|---|---|
+| s2 (GRU) | 0.24 ms/scene | 0.005 ms/scene |
+| s3_full (transformer, 0.92M params) | 2.4 ms/scene | 0.5 ms/scene |
+
+At 10 Hz a planner has 100 ms per cycle; 2.4 ms per predicted agent is
+comfortable on a desktop GPU. It says nothing about an embedded target, and an
+agent-centric model pays this once *per predicted agent*, which is the real
+scaling concern.

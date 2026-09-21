@@ -39,6 +39,30 @@ s3_full,speed,8+ m/s,1755,0.954,1.868,0.291,2.509
 s3_full,agents,1-10,412,0.982,1.854,0.296,2.493
 s3_full,agents,11-30,2864,0.953,1.893,0.307,2.523
 s3_full,agents,31+,1724,0.943,1.85,0.304,2.484
+s3_full_no_map,maneuver,straight,4196,0.966,1.963,0.354,2.564
+s3_full_no_map,maneuver,turning,804,2.112,5.408,0.84,6.094
+s3_full_no_map,speed,0-2 m/s,1238,0.845,1.882,0.322,2.417
+s3_full_no_map,speed,2-8 m/s,2007,1.367,2.998,0.517,3.638
+s3_full_no_map,speed,8+ m/s,1755,1.118,2.415,0.413,3.056
+s3_full_no_map,agents,1-10,412,1.259,2.796,0.454,3.423
+s3_full_no_map,agents,11-30,2864,1.151,2.524,0.439,3.138
+s3_full_no_map,agents,31+,1724,1.122,2.439,0.416,3.051
+s3_full_no_social,maneuver,straight,4196,0.861,1.66,0.263,2.285
+s3_full_no_social,maneuver,turning,804,1.46,3.383,0.646,4.056
+s3_full_no_social,speed,0-2 m/s,1238,0.723,1.519,0.251,2.102
+s3_full_no_social,speed,2-8 m/s,2007,1.103,2.227,0.402,2.88
+s3_full_no_social,speed,8+ m/s,1755,0.957,1.899,0.287,2.547
+s3_full_no_social,agents,1-10,412,0.966,1.862,0.294,2.501
+s3_full_no_social,agents,11-30,2864,0.954,1.923,0.323,2.555
+s3_full_no_social,agents,31+,1724,0.961,1.978,0.334,2.612
+s3_full_seed2,maneuver,straight,4196,0.822,1.546,0.226,2.172
+s3_full_seed2,maneuver,turning,804,1.438,3.29,0.646,3.962
+s3_full_seed2,speed,0-2 m/s,1238,0.71,1.479,0.247,2.057
+s3_full_seed2,speed,2-8 m/s,2007,1.068,2.09,0.362,2.745
+s3_full_seed2,speed,8+ m/s,1755,0.903,1.769,0.249,2.417
+s3_full_seed2,agents,1-10,412,0.974,1.914,0.294,2.554
+s3_full_seed2,agents,11-30,2864,0.915,1.807,0.291,2.437
+s3_full_seed2,agents,31+,1724,0.919,1.837,0.298,2.474
 s3_no_map,maneuver,straight,4196,1.175,2.422,0.479,3.028
 s3_no_map,maneuver,turning,804,2.81,7.507,0.914,8.18
 s3_no_map,speed,0-2 m/s,1238,1.0,2.305,0.388,2.824

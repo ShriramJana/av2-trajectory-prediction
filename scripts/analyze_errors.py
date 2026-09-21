@@ -125,7 +125,11 @@ def main() -> None:
 
     table = breakdown(tags)
     table.to_csv(RESULTS / "breakdown.csv", index=False)
-    stages = [s for s in dict.fromkeys(table["stage"]) if s not in ("s0", "s1")]  # K=6 stages only
+    # figure: K=6 stages, without the full-data ablation/seed runs (they are in the csv)
+    stages = [
+        s for s in dict.fromkeys(table["stage"])
+        if s not in ("s0", "s1") and not s.startswith("s3_full_")
+    ]
     plot_breakdown(table, stages)
     print(table[table["group"] == "maneuver"].to_string(index=False))
 
