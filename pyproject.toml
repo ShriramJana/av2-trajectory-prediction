@@ -10,6 +10,7 @@ dependencies = [
     "matplotlib",
     "tqdm",
     "pandas",
+    "boto3",
 ]
 
 [project.optional-dependencies]

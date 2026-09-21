@@ -36,8 +36,9 @@ class Trainer:
         self.loss_fn = loss_fn
         self.ckpt_dir = Path(cfg["ckpt_dir"])
 
-        train_set = AV2Dataset(cfg.get("processed_train") or processed_dir("train"))
-        val_set = AV2Dataset(cfg.get("processed_val") or processed_dir("val"))
+        # val is always the frozen subset, so every checkpoint is picked the same way
+        train_set = AV2Dataset(processed_dir(cfg["train_split"]))
+        val_set = AV2Dataset(processed_dir("val"))
         self.train_loader = DataLoader(
             train_set, batch_size=cfg["batch_size"], shuffle=True, collate_fn=collate, drop_last=True
         )

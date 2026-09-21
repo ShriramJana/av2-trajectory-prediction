@@ -3,6 +3,9 @@
 The bucket is public; we use unsigned (anonymous) requests. Scenario IDs are
 listed first, shuffled with a fixed seed, and the chosen subset is written to a
 manifest file so the subset is frozen and reproducible.
+
+With --all, every scenario of the split is downloaded to raw/<split>_full
+instead, leaving the frozen subset and its manifest untouched.
 """
 
 import argparse
@@ -59,17 +62,23 @@ def download_scenario(s3, split: str, sid: str, out_root: Path) -> str:
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--split", required=True, choices=["train", "val"])
-    p.add_argument("--n", type=int, required=True)
+    p.add_argument("--n", type=int, help="subset size (required unless --all)")
+    p.add_argument("--all", action="store_true", help="whole split -> raw/<split>_full")
     p.add_argument("--out", default=str(data_root() / "raw"))
     p.add_argument("--workers", type=int, default=32)
     args = p.parse_args()
+    if args.all == (args.n is not None):
+        p.error("give exactly one of --n or --all")
 
     s3 = make_client()
-    out_root = Path(args.out) / args.split
+    out_root = Path(args.out) / (f"{args.split}_full" if args.all else args.split)
     # manifests live in the repo so every machine downloads the identical subset
     manifest = MANIFEST_DIR / f"{args.split}_ids.txt"
 
-    if manifest.exists():
+    if args.all:
+        chosen = list_scenario_ids(s3, args.split)
+        print(f"{len(chosen)} scenarios in {args.split}", file=sys.stderr)
+    elif manifest.exists():
         chosen = manifest.read_text().split()
         print(f"using existing manifest ({len(chosen)} ids)", file=sys.stderr)
         assert len(chosen) == args.n, "manifest size != --n; delete it to resample"

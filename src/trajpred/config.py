@@ -13,6 +13,7 @@ DEFAULTS = {
     "epochs": 30,
     "grad_accum": 1,
     "seed": 42,
+    "train_split": "train",  # "train_full" = every official training scenario
     "model": {},
 }
 

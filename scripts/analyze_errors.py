@@ -52,6 +52,8 @@ def scenario_tags(dataset: AV2Dataset) -> pd.DataFrame:
 def breakdown(tags: pd.DataFrame) -> pd.DataFrame:
     tables = []
     for path in sorted((RESULTS / "per_scenario").glob("*.csv")):
+        if "@" in path.stem:  # rows scored on another split; tags cover the frozen val only
+            continue
         per = pd.read_csv(path).merge(tags, on="scenario_id")
         for group in ("maneuver", "speed", "agents"):
             t = per.groupby(group)[METRICS].mean().round(3)

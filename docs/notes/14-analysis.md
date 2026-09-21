@@ -55,6 +55,8 @@ error (p90 4.7 m, p99 15.6 m). The worst cases are almost all one of:
 MR 0.41 is the honest summary: in 41% of scenarios no mode ends within 2 m.
 
 ## Caveats to state whenever quoting these numbers
+- Everything above is at 15k training scenes. The full-data run
+  ([15-full-data.md](15-full-data.md)) did not repeat the ablations.
 - 15k/5k seed-42 subset, not the full benchmark; not comparable to leaderboard
   entries.
 - One seed per config. Differences under ~0.1 m are not evidence.

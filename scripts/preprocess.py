@@ -26,7 +26,7 @@ def _work(args: tuple[Path, Path]) -> bool:
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--split", required=True, choices=["train", "val"])
+    p.add_argument("--split", required=True, choices=["train", "val", "train_full", "val_full"])
     p.add_argument("--workers", type=int, default=min(8, os.cpu_count() or 1))
     args = p.parse_args()
 

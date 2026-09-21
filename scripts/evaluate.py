@@ -3,10 +3,12 @@
     python scripts/evaluate.py --stage s0
     python scripts/evaluate.py --config configs/s1_gru.yaml
     python scripts/evaluate.py --config configs/s3_polyline.yaml --save-figs 12
+    python scripts/evaluate.py --config configs/s3_full.yaml --val-split val_full
 
 Every stage goes through this one script on the same scenarios, so the rows of
 results/val_metrics.csv are directly comparable. Re-evaluating a stage replaces
 its row. Per-scenario metrics land in results/per_scenario/ for error analysis.
+Rows evaluated on the whole official val split are named <stage>@val_full.
 """
 
 import argparse
@@ -87,13 +89,14 @@ def main() -> None:
     p.add_argument("--stage", choices=["s0"], help="parameter-free stages")
     p.add_argument("--config", type=Path, help="yaml of a trained stage")
     p.add_argument("--ckpt", type=Path, help="defaults to <ckpt_dir>/best.pt")
+    p.add_argument("--val-split", default="val", choices=["val", "val_full"])
     p.add_argument("--save-figs", type=int, default=0, metavar="N", help="plot the N worst scenarios")
     args = p.parse_args()
     if (args.stage is None) == (args.config is None):
         p.error("give exactly one of --stage or --config")
 
     device = pick_device()
-    dataset = AV2Dataset(processed_dir("val"))
+    dataset = AV2Dataset(processed_dir(args.val_split), cache=False)
 
     if args.stage == "s0":
         name, k, predict = "s0", 1, constant_velocity
@@ -102,6 +105,8 @@ def main() -> None:
         name, k = cfg["name"], cfg["model"].get("k", 1)
         predict = load_predictor(cfg, device, args.ckpt)
 
+    if args.val_split != "val":
+        name = f"{name}@{args.val_split}"
     per = evaluate_dataset(predict, dataset, device)
 
     row = {

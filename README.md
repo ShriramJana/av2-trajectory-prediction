@@ -24,15 +24,22 @@ graph. Black = observed history, green = what actually happened.*
 | **S3** | **Polyline transformer: map + other agents** | 6 | **1.18** | **2.45** | **0.41** | **3.09** |
 | | S3 without the map | 6 | 1.44 | 3.24 | 0.55 | 3.86 |
 | | S3 without other agents | 6 | 1.19 | 2.49 | 0.43 | 3.13 |
+| **S3-full** | **Same model, all 199,908 training scenarios** | 6 | **0.95** | **1.88** | **0.31** | **2.51** |
 
 minFDE = endpoint error of the best of K predictions; miss rate = share of
 scenarios where no prediction ends within 2 m; brier-minFDE also penalizes
 giving the best prediction a low probability.
 
+On the whole official validation split (24,988 scenarios) S3 scores 2.44 and
+S3-full 1.86 minFDE — within 0.02 m of the table, so the 5,000-scenario subset
+is representative.
+
 **Read this before quoting the numbers:**
-- Trained on a **15,000-scenario subset (7.5% of the training set)** and
-  evaluated on a 5,000-scenario subset of official val, both drawn with seed 42
-  and frozen in [manifests/](manifests/). These are not leaderboard numbers.
+- Every row except S3-full is trained on a **15,000-scenario subset (7.5% of the
+  training set)**. All rows are evaluated on a 5,000-scenario subset of official
+  val. Both subsets were drawn with seed 42 and are frozen in
+  [manifests/](manifests/). These are validation numbers from a small model, not
+  leaderboard entries.
 - One training run per row. Differences below ~0.1 m are not evidence.
 - Checkpoints were picked on the same validation set they are reported on.
 
@@ -67,9 +74,19 @@ reflects the traffic around it; 15k scenes are too few to learn rare
 interactions) are discussed, not proven, in
 [docs/notes/14-analysis.md](docs/notes/14-analysis.md).
 
-**What still fails.** Median endpoint error is 1.7 m, but the worst 10% of
-scenarios carry 38% of the total error: turns taken at speed where all six modes
-went straight, unexpected stops, and wrong-branch choices at intersections.
+**More data beats more architecture.** Training the unchanged S3 on the full
+training set (13× more scenarios, ~1.5 h on one RTX 4060) takes minFDE from 2.45
+to 1.88 m and miss rate from 0.41 to 0.31. The gain is largest on turns
+(5.13 → 3.33 m), which the 15k subset had only ~2,400 examples of. Train and val
+loss are still equal at the end, so the model is not yet saturated. The
+ablations were *not* repeated at this scale — whether other agents still add
+nothing with 200k scenes is the obvious next experiment.
+
+**What still fails.** For the subset-trained S3, median endpoint error is 1.7 m,
+but the worst 10% of scenarios carry 38% of the total error: turns taken at speed
+where all six modes went straight, unexpected stops, and wrong-branch choices at
+intersections. Full data shrinks the tail (median 1.3 m) without changing its
+character: the worst 10% still carry 35%.
 Galleries of the 12 worst scenarios per model are in
 [results/figures/](results/figures/).
 
@@ -97,7 +114,7 @@ python3.12 -m venv .venv
 pip install torch             # Windows+NVIDIA: --index-url https://download.pytorch.org/whl/cu121
 pip install -e ".[dev]"
 
-# 1. data: ~20k scenarios, a few GB (needs s5cmd; see scripts/download_subset.py)
+# 1. data: ~20k scenarios, ~5 GB, anonymous download from the public S3 bucket
 python scripts/download_subset.py --split val --n 5000
 python scripts/download_subset.py --split train --n 15000
 
@@ -118,6 +135,15 @@ python scripts/evaluate.py --config configs/s3_polyline.yaml --save-figs 12   # 
 
 # 5. error analysis -> results/breakdown.csv + figures
 python scripts/analyze_errors.py --compare configs/s2_multimodal.yaml configs/s3_polyline.yaml
+
+# 6. optional: full dataset (~55 GB download, ~1.5 h training)
+python scripts/download_subset.py --split train --all
+python scripts/download_subset.py --split val --all
+python scripts/preprocess.py --split train_full
+python scripts/preprocess.py --split val_full
+python scripts/train.py --config configs/s3_full.yaml
+python scripts/evaluate.py --config configs/s3_full.yaml
+python scripts/evaluate.py --config configs/s3_full.yaml --val-split val_full
 ```
 
 Data location defaults to `C:\data\av2` (Windows) or `~/data/av2` (macOS/Linux);
