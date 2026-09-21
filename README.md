@@ -138,6 +138,22 @@ Galleries of the 12 worst scenarios per model are in
 - 32 tests; one learning note per stage in [docs/notes/](docs/notes/), including
   the predictions that turned out wrong.
 
+## Pretrained weights
+
+All nine trained models (26 MB in total) are attached to the
+[v1.0 release](https://github.com/ShriramJana/av2-trajectory-prediction/releases/tag/v1.0).
+To evaluate without training, put each file at `checkpoints/<name>/best.pt`:
+
+```bash
+gh release download v1.0 --dir weights
+for f in weights/*.pt; do n=$(basename "$f" .pt); mkdir -p "checkpoints/$n"; mv "$f" "checkpoints/$n/best.pt"; done
+python scripts/evaluate.py --config configs/s3_full.yaml
+```
+
+Per-epoch training logs for every run are in
+[results/training_logs/](results/training_logs/)
+([curves](results/figures/training_curves.png)).
+
 ## Reproduce
 
 ```bash
