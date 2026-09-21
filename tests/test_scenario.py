@@ -1,4 +1,7 @@
+import json
+
 import numpy as np
+import pandas as pd
 
 from trajpred.env import raw_dir
 from trajpred.scenario import load_scenario
@@ -30,3 +33,26 @@ def test_unobserved_steps_are_nan():
         if 0 < nan_frac < 1:
             found_partial = True
     assert found_partial
+
+
+def test_float_typed_timesteps_are_accepted(tmp_path):
+    # seen in the official test split: timestep stored as float64
+    pd.DataFrame(
+        {
+            "track_id": ["a", "a", "b"],
+            "object_type": ["vehicle", "vehicle", "pedestrian"],
+            "timestep": [0.0, 1.0, 1.0],
+            "position_x": [1.0, 2.0, 5.0],
+            "position_y": [0.0, 0.0, 5.0],
+            "heading": [0.0, 0.0, 1.0],
+            "focal_track_id": ["a"] * 3,
+            "scenario_id": ["s"] * 3,
+        }
+    ).to_parquet(tmp_path / "scenario_s.parquet")
+    lane = {"centerline": [{"x": 0, "y": 0}, {"x": 9, "y": 0}], "is_intersection": False}
+    (tmp_path / "log_map_archive_s.json").write_text(json.dumps({"lane_segments": {"1": lane}}))
+
+    s = load_scenario(tmp_path)
+    assert s.focal_idx == 0
+    assert np.allclose(s.positions[0, :2], [[1.0, 0.0], [2.0, 0.0]])
+    assert np.isnan(s.positions[1, 0]).all() and np.allclose(s.positions[1, 1], [5.0, 5.0])

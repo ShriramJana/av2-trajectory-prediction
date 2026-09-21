@@ -52,7 +52,8 @@ def load_scenario(scenario_dir: Path) -> RawScenario:
     positions = np.full((len(track_ids), NUM_TIMESTEPS, 2), np.nan)
     headings = np.full((len(track_ids), NUM_TIMESTEPS), np.nan)
     rows = df["track_id"].map(row_of).to_numpy()
-    cols = df["timestep"].to_numpy()
+    # some test-split files store timestep as float64; astype raises on NaN, as it should
+    cols = df["timestep"].to_numpy().astype(np.int64)
     positions[rows, cols, 0] = df["position_x"].to_numpy()
     positions[rows, cols, 1] = df["position_y"].to_numpy()
     headings[rows, cols] = df["heading"].to_numpy()
