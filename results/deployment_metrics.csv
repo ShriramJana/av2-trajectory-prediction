@@ -1,0 +1,5 @@
+stage,off_lane_all_modes,off_lane_top_mode,off_lane_ground_truth
+s3_full,0.0474,0.044,0.0436
+s3,0.0571,0.0566,0.0436
+s2,0.211,0.101,0.0436
+s3_no_map,0.1102,0.0872,0.0436
