@@ -243,7 +243,10 @@ Windows note: if Smart App Control blocks a freshly released `pyarrow` DLL
 ("An Application Control policy has blocked this file"), install the previous
 release (`python -m pip install "pyarrow<25"`).
 
-## Data and acknowledgements
+## License, data and acknowledgements
+
+The code in this repository is released under the [MIT License](LICENSE). The
+dataset and the trained weights are *not* MIT — see below.
 
 This project uses the [Argoverse 2 Motion Forecasting dataset](https://www.argoverse.org/av2.html),
 released by Argo AI under
